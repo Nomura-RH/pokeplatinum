@@ -12,8 +12,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/main)
 ExternalProject_Add(pokeplatinum_tools
     SOURCE_DIR "${CMAKE_SOURCE_DIR}/tools"
     BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/tools"
-    CMAKE_ARGS    
-        -DCMAKE_C_COMPILER=gcc
     CMAKE_GENERATOR Ninja
     INSTALL_COMMAND ""
 )
@@ -38,20 +36,15 @@ add_library(main_C OBJECT ${MAIN_C_SOURCES})
 add_dependencies(main_C pokeplatinum_tools)
 
 target_compile_options(main_C
-    PRIVATE -O4,p
     PRIVATE -proc arm946e
     PRIVATE -enum int
     PRIVATE -lang c99
     PRIVATE -Cpp_exceptions off
-    PRIVATE -gccext,on
     PRIVATE -msgstyle gcc
     PRIVATE -gccinc
     PRIVATE -ipa file
     PRIVATE -interworking
-    PRIVATE -inline on,noauto
     PRIVATE -char signed
-    PRIVATE -gccdep
-    PRIVATE -MD
     PRIVATE -include global/thumb.h
     PRIVATE -prefix global/global.mch
 )
@@ -178,4 +171,3 @@ add_custom_target(sha1_check ALL
     COMMAND sha1sum -c platinum.us/rom.sha1
     DEPENDS fixrom
 )
-

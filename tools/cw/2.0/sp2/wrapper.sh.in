@@ -1,0 +1,53 @@
+#!/bin/sh
+set -e
+
+wine="@WINE@"
+path_unix="@WRAP_PATH_UNIX@"
+path_win="@WRAP_PATH_WIN@"
+
+# Parse the arguments
+args() {
+    opt_M=false
+    opt_MD=false
+    opt_o=
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            -o) opt_o="$2"; shift 2 ;;
+            -MD) opt_MD=true; shift ;;
+            -M) opt_M=true; shift ;;
+            *) shift ;;
+        esac
+    done
+}
+args "$@"
+
+# Run the tool
+set -- "@WRAP_TOOL@" "$@"
+test -n "$wine" && set -- "$wine" "$@"
+"$@"
+
+# Not outputting a file? nothing to do
+test -z "$opt_o" && exit
+
+# Process the dependency file
+depfile=
+if $opt_M; then
+    depfile="$opt_o"
+elif $opt_MD; then
+    # Move the dep file to where cmake expects it
+    depfile="$opt_o.d"
+    tmp_depfile="$(printf '%s' "$opt_o" | sed 's/[^\.]*$/d/')"
+    mv "$tmp_depfile" "$depfile"
+fi
+
+if [ -n "$depfile" -a -n "$path_unix" -a -n "$path_win" ]; then
+    sedescape_regex() {
+        printf '%s' "$@" | sed -e 's/[^^]/[&]/g; s/\^/\\^/g'
+    }
+    sedescape_subst() {
+        printf '%s' "$@" | sed 's/[&/\]/\\&/g'
+    }
+    sed -e "s/$(sedescape_regex "$path_win")/$(sedescape_subst "$path_unix")/g" \
+        -e 's/\r//g' -e 's/\\/\//g' -e 's/\/$/\\/g' \
+        -i "$depfile"
+fi
